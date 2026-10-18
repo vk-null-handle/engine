@@ -18,13 +18,11 @@ static b8 find_phys_dev(VulkanInstance* instance, VulkanDevice* out_device) {
 		VkPhysicalDeviceProperties props = {};
 		vkGetPhysicalDeviceProperties(phys_devs[i], &props);
 
-		// Get first discrete device
-		if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-			phys_dev = phys_devs[i];
-			out_device->properties = props;
-			out_device->physical_dev = phys_dev;
-			return TRUE;
-		};
+		// Get first device
+		phys_dev = phys_devs[i];
+		out_device->properties = props;
+		out_device->physical_dev = phys_dev;
+		return TRUE;
 	};
 
 	return FALSE;
