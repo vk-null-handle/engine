@@ -1,5 +1,5 @@
 #pragma once
-#include "renderer_types.h"
+#include "renderer_backend.h"
 
 b8 renderer_init(RendererBackend* out_backend, Window* window);
 void renderer_shutdown(RendererBackend* backend);

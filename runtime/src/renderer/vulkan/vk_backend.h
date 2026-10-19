@@ -1,6 +1,6 @@
 #pragma once
 #include "defines.h"
-#include "renderer/renderer_types.h"
+#include "core/window.h"
 
 b8 vulkan_backend_init(Window *window);
 void vulkan_backend_shutdown(void);

@@ -1,5 +1,4 @@
 #include "renderer.h"
-#include "renderer_backend.h"
 
 b8 renderer_init(RendererBackend* out_backend, Window* window) {
 	renderer_backend_create(BACKEND_API_VULKAN, out_backend);
