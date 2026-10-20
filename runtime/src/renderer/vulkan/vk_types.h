@@ -1,5 +1,6 @@
 #pragma once
 #include "defines.h"
+#include "renderer/renderer_types.h"
 #include <vulkan/vulkan_core.h>
 
 #define MAX_FRAMES_IN_FLIGHT 2

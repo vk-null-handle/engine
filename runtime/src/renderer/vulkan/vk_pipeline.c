@@ -1,5 +1,5 @@
 #include "vk_pipeline.h"
-#include "core/logger.h"
+#include "defines.h"
 #include "vk_types.h"
 #include "vk_utils.h"
 #include <vulkan/vulkan_core.h>
@@ -31,11 +31,36 @@ b8 vk_graphics_pipeline_create(VulkanDevice* device, VkFormat* format, VulkanPip
 			.pName = entry_point,
 		},
 	};
-	u32 n_shader_stages = sizeof(shader_stages) / sizeof(shader_stages[0]);
+	u8 n_shader_stages = ARRAY_COUNT(shader_stages);
 
-	// Vertex pulling, don't define vertex input details
+	VkVertexInputBindingDescription binding_description = {
+		.binding = 0,
+		.stride = sizeof(Vertex3D),
+		.inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+	};
+
+	VkVertexInputAttributeDescription attribute_descriptions[] = {
+		{
+			.binding = 0,
+			.location = 0,
+			.format = VK_FORMAT_R32G32B32_SFLOAT,
+			.offset = offsetof(Vertex3D, position),
+		},
+		{
+			.binding = 0,
+			.location = 1,
+			.format = VK_FORMAT_R32G32B32_SFLOAT,
+			.offset = offsetof(Vertex3D, color),
+		},
+	};
+	u8 n_attribute_descriptions = ARRAY_COUNT(attribute_descriptions);
+
 	VkPipelineVertexInputStateCreateInfo vert_input_info = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+		.vertexAttributeDescriptionCount = n_attribute_descriptions,
+		.vertexBindingDescriptionCount = 1,
+		.pVertexAttributeDescriptions = attribute_descriptions,
+		.pVertexBindingDescriptions = &binding_description,
 	};
 
 	// Input assembly, tell Vulkan to draw triangle lists
@@ -96,7 +121,7 @@ b8 vk_graphics_pipeline_create(VulkanDevice* device, VkFormat* format, VulkanPip
 		VK_DYNAMIC_STATE_VIEWPORT,
 		VK_DYNAMIC_STATE_SCISSOR,
 	};
-	uint32_t n_dynamic_states = sizeof(dynamic_state) / sizeof(dynamic_state[0]);
+	u8 n_dynamic_states = ARRAY_COUNT(dynamic_state);
 
 	VkPipelineDynamicStateCreateInfo dynamic_state_info = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
