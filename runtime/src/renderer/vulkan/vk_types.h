@@ -97,4 +97,5 @@ typedef struct vulkan_context {
   VulkanPipeline pipeline;
 
   VulkanBuffer indirect_buffer;
+  VulkanBuffer vertex_buffer;
 } VulkanContext;

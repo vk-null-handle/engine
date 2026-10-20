@@ -12,6 +12,11 @@ else()
   add_link_options(-flto)
 endif()
 
+add_compile_definitions(
+    DEBUG
+    ENABLE_TRACE
+)
+
 include_directories(
   runtime/src
   testbed/src

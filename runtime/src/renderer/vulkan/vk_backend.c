@@ -3,6 +3,7 @@
 #include "core/assert.h"
 #include "core/memory.h"
 
+#include "defines.h"
 #include "vk_utils.h"
 #include "vk_swapchain.h"
 #include "vk_types.h"
@@ -16,6 +17,11 @@
 
 // TEMP
 static VulkanContext vkcontext;
+const Vertex3D vertices[] = {
+	{{0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+	{{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+};
 
 b8 vulkan_backend_init(Window* window) {
 	static const char* layers[] = {"VK_LAYER_KHRONOS_validation"};
@@ -72,7 +78,7 @@ b8 vulkan_backend_init(Window* window) {
 
 	// https://docs.vulkan.org/refpages/latest/refpages/source/VkDrawIndirectCommand.html
 	VkDrawIndirectCommand draw_command = {
-		.vertexCount = 3,
+		.vertexCount = ARRAY_COUNT(vertices),
 		.instanceCount = 1,
 		.firstVertex = 0,
 		.firstInstance = 0,
@@ -88,6 +94,12 @@ b8 vulkan_backend_init(Window* window) {
 	map_buffer(&vkcontext.device, &vkcontext.indirect_buffer, sizeof(draw_command));
 	mem_copy(vkcontext.indirect_buffer.mapped, &draw_command, sizeof(draw_command));
 	unmap_buffer(&vkcontext.device, &vkcontext.indirect_buffer);
+
+	ASSERT(create_buffer(&vkcontext.device, sizeof(vertices[0]) * ARRAY_COUNT(vertices), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+						 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &vkcontext.vertex_buffer));
+	map_buffer(&vkcontext.device, &vkcontext.vertex_buffer, sizeof(vertices[0]) * ARRAY_COUNT(vertices));
+	mem_copy(vkcontext.vertex_buffer.mapped, &vertices, sizeof(vertices[0]) * ARRAY_COUNT(vertices));
+	unmap_buffer(&vkcontext.device, &vkcontext.vertex_buffer);
 
 	return TRUE;
 }
@@ -121,6 +133,7 @@ void vulkan_backend_shutdown(void) {
 		vkDestroySurfaceKHR(vkcontext.instance.handle, vkcontext.surface, NULL);
 	};
 
+	destroy_buffer(&vkcontext.device, &vkcontext.vertex_buffer);
 	destroy_buffer(&vkcontext.device, &vkcontext.indirect_buffer);
 	vk_device_destroy(&vkcontext.device);
 
@@ -260,6 +273,9 @@ void vulkan_backend_render_frame(Window* window) {
 
 		// Draw triangle
 		vkCmdBindPipeline(frame_res->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkcontext.pipeline.handle);
+		VkBuffer vertex_buffers[] = {vkcontext.vertex_buffer.handle};
+		VkDeviceSize offsets[] = {0};
+		vkCmdBindVertexBuffers(frame_res->command_buffer, 0, 1, vertex_buffers, offsets);
 		vkCmdDrawIndirect(frame_res->command_buffer, vkcontext.indirect_buffer.handle, 0, 1, sizeof(VkDrawIndirectCommand));
 	}
 
