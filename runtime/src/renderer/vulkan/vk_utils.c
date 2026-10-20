@@ -23,7 +23,7 @@ i32 find_memory_index(VulkanDevice* device, u32 type_filter, u32 property_flags)
 VkShaderModule vk_shader_load(VulkanDevice* device, const char* file_name, shaderc_shader_kind kind) {
 	// read shader file from disk
 	char shader_path[512];
-	snprintf(shader_path, sizeof(shader_path), "../../runtime/assets/shaders/%s", file_name);
+	snprintf(shader_path, sizeof(shader_path), "runtime/assets/shaders/%s", file_name);
 
 	FILE* file = fopen(shader_path, "rb");
 	if (!file) {
