@@ -19,10 +19,13 @@
 // TEMP
 static VulkanContext vkcontext;
 const Vertex3D vertices[] = {
-	{{0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-	{{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-	{{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+	{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+	{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+	{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
 };
+const u32 indices[] = {
+	0, 1, 2, 2, 3, 0};
 
 b8 vulkan_backend_init(Window* window) {
 	static const char* layers[] = {"VK_LAYER_KHRONOS_validation"};
@@ -77,23 +80,24 @@ b8 vulkan_backend_init(Window* window) {
 	vk_command_buffers_create(&vkcontext);
 	LOG_DEBUG("Created Vulkan command buffers and pool");
 
-	// https://docs.vulkan.org/refpages/latest/refpages/source/VkDrawIndirectCommand.html
-	VkDrawIndirectCommand draw_command = {
-		.vertexCount = ARRAY_COUNT(vertices),
+	// https://docs.vulkan.org/refpages/latest/refpages/source/VkDrawIndexedIndirectCommand.html
+	VkDrawIndexedIndirectCommand draw_command = {
+		.indexCount = ARRAY_COUNT(indices),
 		.instanceCount = 1,
-		.firstVertex = 0,
+		.firstIndex = 0,
+		.vertexOffset = 0,
 		.firstInstance = 0,
 	};
 
 	// Create indirect buffer
 	ASSERT(create_buffer(&vkcontext.device,
-						 sizeof(VkDrawIndirectCommand),
+						 sizeof(VkDrawIndexedIndirectCommand),
 						 VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
 						 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 						 &vkcontext.indirect_buffer));
 	// Map it to cpu memory
-	map_buffer(&vkcontext.device, &vkcontext.indirect_buffer, sizeof(draw_command));
-	mem_copy(vkcontext.indirect_buffer.mapped, &draw_command, sizeof(draw_command));
+	map_buffer(&vkcontext.device, &vkcontext.indirect_buffer, sizeof(VkDrawIndexedIndirectCommand));
+	mem_copy(vkcontext.indirect_buffer.mapped, &draw_command, sizeof(VkDrawIndexedIndirectCommand));
 	unmap_buffer(&vkcontext.device, &vkcontext.indirect_buffer);
 
 	// Vertex buffer
@@ -113,6 +117,25 @@ b8 vulkan_backend_init(Window* window) {
 							 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 							 &vkcontext.vertex_buffer));
 		copy_buffer(&vkcontext.device, staging_buffer, vkcontext.vertex_buffer, buffer_size);
+		destroy_buffer(&vkcontext.device, &staging_buffer);
+	}
+	// Index buffer
+	{
+		VkDeviceSize buffer_size = sizeof(indices[0]) * ARRAY_COUNT(indices);
+		VulkanBuffer staging_buffer;
+		ASSERT(create_buffer(&vkcontext.device,
+							 buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+							 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+							 &staging_buffer));
+		map_buffer(&vkcontext.device, &staging_buffer, buffer_size);
+		mem_copy(staging_buffer.mapped, indices, buffer_size);
+		unmap_buffer(&vkcontext.device, &staging_buffer);
+
+		ASSERT(create_buffer(&vkcontext.device, buffer_size,
+							 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+							 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+							 &vkcontext.index_buffer));
+		copy_buffer(&vkcontext.device, staging_buffer, vkcontext.index_buffer, buffer_size);
 		destroy_buffer(&vkcontext.device, &staging_buffer);
 	}
 
@@ -149,6 +172,7 @@ void vulkan_backend_shutdown(void) {
 	};
 
 	destroy_buffer(&vkcontext.device, &vkcontext.vertex_buffer);
+	destroy_buffer(&vkcontext.device, &vkcontext.index_buffer);
 	destroy_buffer(&vkcontext.device, &vkcontext.indirect_buffer);
 	vk_device_destroy(&vkcontext.device);
 
@@ -288,10 +312,13 @@ void vulkan_backend_render_frame(Window* window) {
 
 		// Draw triangle
 		vkCmdBindPipeline(frame_res->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkcontext.pipeline.handle);
+
 		VkBuffer vertex_buffers[] = {vkcontext.vertex_buffer.handle};
 		VkDeviceSize offsets[] = {0};
 		vkCmdBindVertexBuffers(frame_res->command_buffer, 0, 1, vertex_buffers, offsets);
-		vkCmdDrawIndirect(frame_res->command_buffer, vkcontext.indirect_buffer.handle, 0, 1, sizeof(VkDrawIndirectCommand));
+		vkCmdBindIndexBuffer(frame_res->command_buffer, vkcontext.index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
+
+		vkCmdDrawIndexedIndirect(frame_res->command_buffer, vkcontext.indirect_buffer.handle, 0, 1, sizeof(VkDrawIndexedIndirectCommand));
 	}
 
 	// End dynamic rendering
