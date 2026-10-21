@@ -98,4 +98,5 @@ typedef struct vulkan_context {
 
   VulkanBuffer indirect_buffer;
   VulkanBuffer vertex_buffer;
+  VulkanBuffer index_buffer;
 } VulkanContext;
