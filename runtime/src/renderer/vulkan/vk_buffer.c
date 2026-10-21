@@ -43,6 +43,41 @@ void destroy_buffer(VulkanDevice* device, VulkanBuffer* buffer) {
 	vkFreeMemory(device->logical_dev, buffer->memory, NULL);
 }
 
+void copy_buffer(VulkanDevice* device, VulkanBuffer src, VulkanBuffer dst, VkDeviceSize size) {
+	VkCommandBufferAllocateInfo alloc_info = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+		.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+		.commandBufferCount = 1,
+		.commandPool = device->command_pool,
+	};
+
+	VkCommandBuffer cmd_buffer;
+	vkAllocateCommandBuffers(device->logical_dev, &alloc_info, &cmd_buffer);
+
+	VkCommandBufferBeginInfo begin_info = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+	};
+
+	vkBeginCommandBuffer(cmd_buffer, &begin_info);
+	VkBufferCopy copy_region = {
+		.size = size,
+	};
+	vkCmdCopyBuffer(cmd_buffer, src.handle, dst.handle, 1, &copy_region);
+	vkEndCommandBuffer(cmd_buffer);
+
+	VkSubmitInfo submit_info = {
+		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+		.commandBufferCount = 1,
+		.pCommandBuffers = &cmd_buffer,
+	};
+
+	vkQueueSubmit(device->gfx_queue, 1, &submit_info, VK_NULL_HANDLE);
+	vkQueueWaitIdle(device->gfx_queue);
+
+	vkFreeCommandBuffers(device->logical_dev, device->command_pool, 1, &cmd_buffer);
+}
+
 void map_buffer(VulkanDevice* device, VulkanBuffer* buffer, VkDeviceSize size) {
 	VK_CHECK(vkMapMemory(device->logical_dev, buffer->memory, 0, size, 0, &buffer->mapped));
 }

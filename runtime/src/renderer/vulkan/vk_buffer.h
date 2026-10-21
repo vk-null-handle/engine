@@ -10,5 +10,8 @@ b8 create_buffer(
 	VulkanBuffer* out_buffer);
 
 void destroy_buffer(VulkanDevice* device, VulkanBuffer* buffer);
+
+void copy_buffer(VulkanDevice* device, VulkanBuffer src, VulkanBuffer dst, VkDeviceSize size);
+
 void map_buffer(VulkanDevice* device, VulkanBuffer* buffer, VkDeviceSize size);
 void unmap_buffer(VulkanDevice* device, VulkanBuffer* buffer);
