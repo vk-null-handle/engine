@@ -4,6 +4,7 @@
 #include "core/memory.h"
 
 #include "defines.h"
+#include "renderer/renderer_types.h"
 #include "vk_utils.h"
 #include "vk_swapchain.h"
 #include "vk_types.h"
@@ -95,11 +96,25 @@ b8 vulkan_backend_init(Window* window) {
 	mem_copy(vkcontext.indirect_buffer.mapped, &draw_command, sizeof(draw_command));
 	unmap_buffer(&vkcontext.device, &vkcontext.indirect_buffer);
 
-	ASSERT(create_buffer(&vkcontext.device, sizeof(vertices[0]) * ARRAY_COUNT(vertices), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-						 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &vkcontext.vertex_buffer));
-	map_buffer(&vkcontext.device, &vkcontext.vertex_buffer, sizeof(vertices[0]) * ARRAY_COUNT(vertices));
-	mem_copy(vkcontext.vertex_buffer.mapped, &vertices, sizeof(vertices[0]) * ARRAY_COUNT(vertices));
-	unmap_buffer(&vkcontext.device, &vkcontext.vertex_buffer);
+	// Vertex buffer
+	{
+		VkDeviceSize buffer_size = sizeof(vertices[0]) * ARRAY_COUNT(vertices);
+		VulkanBuffer staging_buffer;
+		ASSERT(create_buffer(&vkcontext.device,
+							 buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+							 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+							 &staging_buffer));
+		map_buffer(&vkcontext.device, &staging_buffer, buffer_size);
+		mem_copy(staging_buffer.mapped, vertices, buffer_size);
+		unmap_buffer(&vkcontext.device, &staging_buffer);
+
+		ASSERT(create_buffer(&vkcontext.device, buffer_size,
+							 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+							 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+							 &vkcontext.vertex_buffer));
+		copy_buffer(&vkcontext.device, staging_buffer, vkcontext.vertex_buffer, buffer_size);
+		destroy_buffer(&vkcontext.device, &staging_buffer);
+	}
 
 	return TRUE;
 }
