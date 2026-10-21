@@ -91,13 +91,13 @@ b8 vulkan_backend_init(Window* window) {
 
 	// Create indirect buffer
 	ASSERT(create_buffer(&vkcontext.device,
-						 sizeof(VkDrawIndirectCommand),
+						 sizeof(VkDrawIndexedIndirectCommand),
 						 VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
 						 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 						 &vkcontext.indirect_buffer));
 	// Map it to cpu memory
-	map_buffer(&vkcontext.device, &vkcontext.indirect_buffer, sizeof(draw_command));
-	mem_copy(vkcontext.indirect_buffer.mapped, &draw_command, sizeof(draw_command));
+	map_buffer(&vkcontext.device, &vkcontext.indirect_buffer, sizeof(VkDrawIndexedIndirectCommand));
+	mem_copy(vkcontext.indirect_buffer.mapped, &draw_command, sizeof(VkDrawIndexedIndirectCommand));
 	unmap_buffer(&vkcontext.device, &vkcontext.indirect_buffer);
 
 	// Vertex buffer
