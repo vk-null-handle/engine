@@ -10,8 +10,10 @@ struct window {
 
 Window* win_init(u32 width, u32 height, char* title) {
 	Window* out_window = mem_alloc(sizeof(struct window));
-	ASSERT(out_window || glfwInit());
 
+	if (!out_window || !glfwInit()) {
+		return FALSE;
+	}
 	if (!glfwVulkanSupported()) {
 		LOG_ERROR("Vulkan is not supported on this system");
 		glfwTerminate();

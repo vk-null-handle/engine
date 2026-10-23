@@ -34,6 +34,6 @@ void _log_output(LogSeverity severity, const char* msg, ...) {
 	fprintf(console, "[%s] %s\n", severity_str, buff);
 }
 
-void report_assertion_failure(const char* expression, const char* message, const char* file, u32 line) {
+void _report_assertion_failure(const char* expression, const char* message, const char* file, u32 line) {
 	_log_output(LOG_SEVERITY_ERROR, "Assertion Failure: %s, message: '%s', file: %s line: %d\n", expression, message, file, line);
 }
