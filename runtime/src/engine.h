@@ -4,7 +4,7 @@
 #include "renderer/renderer.h"
 
 typedef struct engine {
-  Window window;
+  Window *window;
   RendererBackend renderer_backend;
 } Engine;
 
