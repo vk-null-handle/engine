@@ -39,5 +39,4 @@ target_link_libraries(testbed PRIVATE
   Runtime
   vulkan
   glfw
-  shaderc_shared
 )
